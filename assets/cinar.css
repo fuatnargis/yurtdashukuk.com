@@ -27,6 +27,8 @@
 .theme-reference .brand-mark .icon{width:40px;height:40px}
 .theme-reference .brand-logo{max-height:80px;max-width:290px;object-fit:contain}
 .theme-reference .main-nav{grid-row:2;justify-content:center;gap:27px;min-height:52px;flex-wrap:wrap;padding:0 12px;border-top:1px solid var(--line);color:var(--header-text)}
+.theme-reference .main-nav-head,.theme-reference .main-nav-close{display:none}
+.theme-reference .main-nav-body{display:contents}
 .theme-reference .main-nav a,.theme-reference.home-page .main-nav a{font-size:13px;color:var(--header-text);padding:15px 0;font-weight:600;white-space:normal}
 .theme-reference .main-nav a[aria-current=page],.theme-reference .main-nav a:hover{color:var(--action)}
 .theme-reference .main-nav a:after{display:none}
@@ -208,12 +210,23 @@
  .theme-reference .brand strong{font-size:30px}.theme-reference .brand-logo{max-height:60px;max-width:180px}
  .theme-reference .header-actions{border:0;min-height:44px;margin-left:auto}.theme-reference .header-contact{display:none}.theme-reference .header-payment{display:inline-flex;font-size:10px;padding:8px 12px;gap:6px;color:#fff;background:var(--navy,#142b36);border-color:var(--navy,#142b36)}
  .theme-reference .menu-toggle{display:grid}.theme-reference .header-actions .icon-button{width:38px;height:44px}
- .theme-reference .main-nav,.theme-reference.home-page .main-nav{display:none;position:absolute;top:100%;left:-32px;right:-32px;max-height:calc(100svh - 95px);background:var(--header-bg);color:var(--header-text);padding:12px 32px 22px;box-shadow:0 12px 25px #0002;border-top:1px solid var(--line)}
- .theme-reference .main-nav.is-open{display:flex;flex-direction:column;align-items:stretch;gap:0}
+ .theme-reference .main-nav,.theme-reference.home-page .main-nav{display:block;position:fixed;top:0;right:-100%;bottom:0;left:auto;width:min(88%,360px);max-height:none;height:100%;background:var(--header-bg);color:var(--header-text);padding:0;box-shadow:-18px 0 40px #00000030;border-top:0;transition:right .3s ease;overflow-y:auto;z-index:60}
+ .theme-reference .main-nav-head,.theme-reference .main-nav-close{display:flex}
+ .theme-reference .main-nav-body{display:flex}
+ .theme-reference .main-nav.is-open{right:0}
+ .theme-reference .main-nav-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+ .theme-reference .main-nav-head .brand{margin:0}
+ .theme-reference .main-nav-close{background:#e6392f;color:#fff;border-radius:8px;width:36px;height:36px;display:grid;place-items:center;flex:0 0 auto}
+ .theme-reference .main-nav-close .icon{width:18px;height:18px}
+ .theme-reference .main-nav-close:hover{background:#c92e25}
+ .theme-reference .main-nav-body{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:8px 20px 26px}
  .theme-reference .nav-item{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line);gap:0}
  .theme-reference .nav-item>a{flex:1;border:0;padding:13px 0}.submenu-toggle{width:44px;height:48px}
  .nav-submenu{position:static;flex:0 0 100%;min-width:0;border:0;border-radius:0;box-shadow:none;padding:0 0 10px 20px;max-height:none;background:var(--header-bg)}
  .theme-reference .nav-submenu a{font-size:12px;padding:10px 0}
+ body.nav-open{overflow:hidden}
+ .theme-reference .main-nav-overlay{display:none}
+ .theme-reference .main-nav-overlay.is-open{display:block;position:fixed;inset:0;background:#0a1b2966;z-index:55}
  .values-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:25px}
  .service-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .theme-reference .footer-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:35px}
@@ -223,7 +236,8 @@
  .theme-reference .container{width:calc(100% - 36px)}.theme-reference .section{padding:52px 0}
  .theme-reference .brand strong{font-size:27px}.theme-reference .brand small{font-size:6px;letter-spacing:1.5px}.theme-reference .brand-mark{width:34px;height:43px}.theme-reference .brand-mark .icon{width:28px;height:28px}.theme-reference .brand{gap:8px}
  .theme-reference .header-inner{gap:4px}.theme-reference .header-actions{gap:0}.theme-reference .header-actions .icon-button{width:32px}
- .theme-reference .main-nav,.theme-reference.home-page .main-nav{left:-18px;right:-18px;padding-inline:18px}
+ .theme-reference .main-nav,.theme-reference.home-page .main-nav{padding-inline:18px}
+ .theme-reference .main-nav.is-open,.theme-reference.home-page .main-nav.is-open{right:0}
  .theme-reference .topbar-inner>div{display:none}.theme-reference .topbar-inner>span{font-size:10px}
  .theme-reference.home-page .hero,.theme-reference.home-page .hero-inner{min-height:min(var(--hero-height),650px)}
  .theme-reference.home-page .hero-inner{padding:60px 0}.theme-reference .hero h1{font-size:clamp(30px,7.5vw,43px);letter-spacing:-.6px}.theme-reference .hero h1 br{display:none}
@@ -239,7 +253,11 @@
  .theme-reference .contact-band-inner{padding-block:50px}.theme-reference .contact-band h2{font-size:28px}
  .theme-reference .page-heading h1{font-size:31px}.theme-reference .page-heading p{font-size:14px}.theme-reference .page-heading{padding:28px 0 36px}
  .theme-reference .prose{font-size:16px}.theme-reference .prose h2{font-size:24px}.theme-reference .prose h3{font-size:21px}
- .theme-reference .footer-grid{grid-template-columns:1fr 1fr;gap:30px 22px}.theme-reference .footer-grid .footer-legal{grid-column:1/-1}.theme-reference .footer-grid .footer-col:last-child{grid-column:1/-1}
+ .theme-reference .footer-grid{grid-template-columns:1fr 1fr;gap:30px 22px}
+ .theme-reference .footer-grid .footer-col:nth-child(1){grid-column:1/-1;order:3}
+ .theme-reference .footer-grid .footer-col:nth-child(2){display:none}
+ .theme-reference .footer-grid .footer-col:nth-child(3){order:2}
+ .theme-reference .footer-grid .footer-col:nth-child(4){order:1}
  .theme-reference .site-footer{padding-top:46px;padding-bottom:calc(56px + env(safe-area-inset-bottom,0px))}.theme-reference .footer-bottom-inner{font-size:10px}
  .floating-contact{display:none}.theme-reference .back-top{bottom:calc(72px + env(safe-area-inset-bottom,0px));right:16px}
  .theme-reference .contact-form-card{padding:25px 20px}.theme-reference .contact-form input,.theme-reference .contact-form select,.theme-reference .contact-form textarea{font-size:16px}

@@ -9,9 +9,9 @@
     }
   },
   "routes": [
-    { "src": "/assets/(site|refined|modern|articles|cinar|mizan|juris-home|profile|admin)\\.css", "headers": { "X-Content-Type-Options": "nosniff" }, "continue": true },
+    { "src": "/assets/(site|refined|modern|articles|cinar|mizan|juris-home|profile|classic|admin)\\.css", "headers": { "X-Content-Type-Options": "nosniff" }, "continue": true },
     { "src": "/assets/(site|admin|theme-admin)\\.js", "headers": { "X-Content-Type-Options": "nosniff" }, "continue": true },
-    { "src": "/assets/((?:site|refined|modern|articles|cinar|mizan|juris-home|profile|admin)\\.css|(?:site|admin|theme-admin)\\.js)", "dest": "/assets/$1" },
+    { "src": "/assets/((?:site|refined|modern|articles|cinar|mizan|juris-home|profile|classic|admin)\\.css|(?:site|admin|theme-admin)\\.js)", "dest": "/assets/$1" },
     { "src": "/assets/(images/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\\.(?:jpg|jpeg|png|webp|svg|gif|avif)|fonts/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\\.(?:ttf|woff2|woff|eot))", "dest": "/assets/$1" },
     { "src": "/(.*)", "dest": "/api/index.php" }
   ]

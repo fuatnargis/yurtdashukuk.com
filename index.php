@@ -5,7 +5,6 @@ require __DIR__.'/app/layout.php';
 $path=rawurldecode((string)parse_url($_SERVER['REQUEST_URI']??'/',PHP_URL_PATH));
 $path=rtrim($path,'/')?:'/';
 if($path==='/sayfa/kurumsal'){header('Location: /kurumsal',true,301);exit;}
-if($path==='/kanunlar'){header('Location: /',true,301);exit;}
 if($path==='/basinda-biz'||preg_match('~^/basinda-biz/[a-z0-9-]+$~',$path)){header('Location: /',true,301);exit;}
 if($path==='/ekibimiz'){header('Location: /avukatlar',true,301);exit;}
 $aliases=['/index.php'=>'/','/index.html'=>'/','/makaleler.php'=>'/makaleler','/blog-list.html'=>'/makaleler','/blog.html'=>'/makaleler','/about-us.html'=>'/kurumsal','/practice-areas.html'=>'/calisma-alanlari','/contact.html'=>'/iletisim','/iletisim.php'=>'/iletisim','/kurumsal.php'=>'/kurumsal'];
@@ -59,6 +58,7 @@ if(preg_match('~^/(makaleler|calisma-alanlari|sayfa|avukatlar)/([a-z0-9-]+)$~',$
     if($detail){$title=branded_title($detail['meta_title']?:$detail['title']);$description=$detail['meta_description']?:($detail['excerpt']?:entry_plain($detail));$page='detail';}
 }
 if($path==='/kurumsal'){$detail=entry('page','kurumsal');$type='page';if($detail){$page='kurumsal';$title=branded_title($detail['meta_title']?:$detail['title']);$description=$detail['meta_description']?:($detail['excerpt']?:entry_plain($detail));}}
+if($path==='/kanunlar'){$title=branded_title('Kanunlar');$description='Sık başvurulan temel kanunlara madde metinlerine hızlı erişim için tek noktadan ulaşın.';$meta['jsonld'][]=jsonld_webpage('Kanunlar',$description,$path,'CollectionPage');$meta['jsonld'][]=jsonld_breadcrumbs(['Kanunlar'=>$path]);}
 $routeKey=ltrim($path,'/');$isStatic=$routeKey!==''&&isset(SEO_ROUTES[$routeKey]);
 if($isStatic){$rm=seo_route_meta($routeKey);$title=$rm['title'].' | '.setting('brand');$description=$rm['description'];$meta['noindex']=$rm['noindex'];$meta['jsonld'][]=jsonld_webpage($rm['title'],$description,$path,$routeKey==='iletisim'?'ContactPage':'CollectionPage');$meta['jsonld'][]=jsonld_breadcrumbs([SEO_ROUTES[$routeKey]['label']=>$path]);}
 if(($path==='/sikca-sorulan-sorular'||($path==='/'&&setting('show_faq')==='1'))&&($faqs=entries('faq')))$meta['jsonld'][]=jsonld_faq($faqs);
@@ -77,7 +77,7 @@ if($detail){
     else $meta['jsonld'][]=jsonld_webpage($detail['title'],$description,$path,$path==='/kurumsal'?'AboutPage':'WebPage');
 }
 if($path==='/makaleler'&&(query('q')!==''||query('kategori')!==''||query('sayfa')!==''))$meta['noindex']=true;
-$known=$path==='/' || $isStatic || $detail;
+$known=$path==='/' || $path==='/kanunlar' || $isStatic || $detail;
 if(!$known){http_response_code(404);$title='Sayfa Bulunamadı | '.setting('brand');$meta['noindex']=true;}
 if($path==='/iletisim' && $_SERVER['REQUEST_METHOD']==='POST') {
     verify_csrf();$errors=[];$old=[];foreach(['name','email','phone','subject','message'] as $k)$old[$k]=input($k);
@@ -109,6 +109,7 @@ elseif($path==='/'):require __DIR__.'/app/views/home.php';?>
     $perPage=max(3,min(24,(int)setting('articles_per_page','6')));$pages=max(1,(int)ceil(count($filtered)/$perPage));$num=max(1,min($pages,(int)query('sayfa','1')));$items=array_slice($filtered,($num-1)*$perPage,$perPage);
     if(!$search&&!$category):?><section class="hub-section"><div class="container"><?php simple_breadcrumb([ui('hub_title')=>'']);?><h1 class="hub-title"><?=e(ui('hub_title'))?></h1><?php if(setting('articles_text')):?><p class="hub-text"><?=e(setting('articles_text'))?></p><?php endif;?><div class="hub-grid"><?php foreach($categories as $name=>$count)hub_card($name,$count);?></div><?php if(!$categories):?><div class="empty-state"><?=icon('book')?><h2><?=e(ui('article_empty'))?></h2></div><?php endif;?></div></section><?php
     else:$listTitle=$search?'Arama: “'.$search.'”':trim($category.' '.ui('category_list_suffix'));?><section class="list-section"><div class="container"><?php simple_breadcrumb([ui('hub_title')=>'/makaleler',($search?'Arama':$category)=>'']);?><div class="list-heading"><h1 class="list-title"><?=e($listTitle)?></h1><span class="list-count"><?=count($filtered)?> <?=e(ui('article_count_suffix'))?></span></div><div class="post-grid" id="yayinlar"><?php foreach($items as $a)post_card($a);?></div><?php if(!$items):?><div class="empty-state"><?=icon('search')?><h2><?=e(ui('article_search_empty'))?></h2><p><?=e(ui('article_search_help'))?></p><a class="text-link" href="/makaleler"><?=e(ui('all_categories'))?> <?=icon('arrow')?></a></div><?php endif;if($pages>1):?><nav class="pagination" aria-label="Sayfalar"><?php for($i=1;$i<=$pages;$i++):?><a href="/makaleler?<?=e(http_build_query(array_filter(['q'=>$search,'kategori'=>$category,'sayfa'=>$i])))?>" <?=$i===$num?'aria-current="page"':''?>><?=$i?></a><?php endfor;?></nav><?php endif;?><p class="list-back"><a class="text-link" href="/makaleler">← <?=e(ui('all_categories'))?></a></p></div></section><?php endif;?>
+<?php elseif($path==='/kanunlar'):require __DIR__.'/app/views/laws.php';?>
 <?php elseif($path==='/kurumsal'&&$detail):require __DIR__.'/app/views/corporate.php';?>
 <?php elseif($path==='/avukatlar'):page_heading(ui('founder_title'),ui('founder_title'),ui('founder_intro'));?><section class="section"><div class="container lawyer-directory"><?php foreach(entries('team') as $profile)profile_tile($profile);?></div></section><?php
 elseif($type==='team'&&$detail):require __DIR__.'/app/views/profile.php';?>

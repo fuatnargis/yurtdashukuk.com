@@ -78,8 +78,9 @@ try {
   ok(authored.body.includes('<a class="author-card')&&authored.body.includes('href="/avukatlar/halil-ibrahim-yurtdas"'),'Article author card is entirely clickable');
   ok(!/<p[^>]*>\s*<p[ >]/.test(home.body),'Homepage rich text does not nest paragraph elements');
   ok(home.body.includes('data-slider-pause'),'Hero offers a persistent animation pause control');
-  ok(home.body.includes('--sans:Arial,Helvetica,sans-serif;--serif:Arial,Helvetica,sans-serif;--heading:Arial,Helvetica,sans-serif'),'Fresh site uses Arial throughout');
-  ok(home.body.includes('class="juris-hero-expertise"')&&home.body.includes('href="/calisma-alanlari/aile-hukuku"'),'Hero links directly to published practice areas');
+  ok(home.body.includes('--sans:Manrope,Arial,sans-serif;--serif:"Cormorant Garamond",Georgia,serif;--heading:"Cormorant Garamond",Georgia,serif'),'Fresh site uses readable body type and classic display type');
+  ok(home.body.includes('class="container juris-hero-expertise"')&&home.body.includes('href="/calisma-alanlari/aile-hukuku"'),'Homepage links directly to published practice areas');
+  ok(home.body.indexOf('data-home-section="home_profile"')<home.body.indexOf('data-home-section="intro"')&&home.body.includes('class="juris-about-visual"'),'Homepage opens with the lawyer introduction before the about section');
   ok(home.body.includes('class="juris-approach-text"')&&home.body.includes('Bir hukuki süreci anlamak'),'Working approach uses editable explanatory text');
   const search=await html(visitor,'/makaleler?q='+encodeURIComponent('sözleşme'));ok(search.body.includes('Sözleşme imzalamadan')&&!search.body.includes('Aradığınız konuda yayın bulunamadı.'),'Turkish search finds matching publication');
   ok((await html(visitor,'/makaleler?q=imkansiz-xyz')).body.includes('Aradığınız konuda yayın bulunamadı.'),'Search has an empty state');
@@ -211,7 +212,7 @@ try {
   await action({...layout,home_section_order:originalOrder,home_articles_layout:'editorial'});
   await action({...appearance,background_color:'#eee9e1',header_color:'#fafafa',footer_color:'#123456',heading_font:'serif',header_layout:'inline'});const themed=(await html(visitor,'/')).body;
   ok(themed.includes('--background:#eee9e1')&&themed.includes('--header-bg:#fafafa')&&themed.includes('--footer-bg:#123456')&&themed.includes('header-inline'),'Separate page, header and footer colors and layout persist');
-  ok(themed.includes('--sans:"Cormorant Garamond",Georgia,serif;--serif:"Cormorant Garamond",Georgia,serif;--heading:"Cormorant Garamond",Georgia,serif'),'Admin font choice applies across the site');
+  ok(themed.includes('--sans:Manrope,Arial,sans-serif;--serif:"Cormorant Garamond",Georgia,serif;--heading:"Cormorant Garamond",Georgia,serif'),'Admin font choice applies to headings while body text stays readable');
   await action({...appearance,heading_font:'<script>',header_layout:'invalid'});ok((await html(visitor,'/')).body.includes('header-inline'),'Invalid font and header values rejected');
   await action(appearance);
   const contact=await html(visitor,'/iletisim');

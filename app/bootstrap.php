@@ -71,6 +71,7 @@ function db(): PDO {
     migrate_natural_hero($db);
     migrate_owner_profile($db);
     migrate_remove_press($db);
+    migrate_classic_design($db);
     return $db;
 }
 function e(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }

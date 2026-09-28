@@ -3,6 +3,7 @@ declare(strict_types=1);
 const FOOTER_DEFAULT_LINKS="Kurucu Avukat|/avukatlar\nSıkça Sorulan Sorular|/sikca-sorulan-sorular\nKişisel Verilerin Korunması|/sayfa/kvkk\nÇerez Politikası|/sayfa/cerez-politikasi\nYasal Bilgilendirme|/sayfa/yasal-bilgilendirme";
 // Editable interface copy. Defaults keep upgrades compatible with existing databases.
 const SITE_TEXTS=[
+    'mobile_call'=>['Mobil arama bağlantısı','Bizi Arayın'],
     'mobile_whatsapp'=>['Mobil WhatsApp bağlantısı','WhatsApp'],
     'home_link'=>['Ana sayfa bağlantısı','Ana Sayfa'],
     'all_categories'=>['Tüm kategoriler bağlantısı','Tüm kategoriler'],

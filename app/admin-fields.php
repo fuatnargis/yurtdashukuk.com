@@ -7,6 +7,7 @@ const CONTENT_TYPES=[
     'page'=>['label'=>'Sayfalar','single'=>'Sayfa','icon'=>'file','hint'=>'Kurumsal bilgiler, aydınlatma metinleri ve ek sayfaları yönetin.'],
     'faq'=>['label'=>'Sık Sorulan Sorular','single'=>'Soru','icon'=>'mail','hint'=>'Ana sayfadaki soru ve yanıtları düzenleyin.'],
     'menu'=>['label'=>'Menüler','single'=>'Menü bağlantısı','icon'=>'menu','hint'=>'Ana menü ve alt menü bağlantılarını sıralayın. Küçük sıra numarası önce görünür.'],
+    'law'=>['label'=>'Kanunlar','single'=>'Kanun','icon'=>'book','hint'=>'Kanunlar sayfasında listelenen kanunları, numaralarını ve resmî metin bağlantılarını düzenleyin.'],
 ];
 function settings_fields(): array {return [
     'identity'=>['title'=>'Büro Kimliği','description'=>'Büronuzun adı, iletişim bilgileri ve sosyal bağlantıları.','fields'=>[

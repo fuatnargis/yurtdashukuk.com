@@ -1,6 +1,7 @@
 'use strict';
 const menu = document.querySelector('.menu-toggle');
 const nav = document.querySelector('.main-nav');
+const navOverlay = document.querySelector('.main-nav-overlay');
 const heroSlider=document.querySelector('[data-juris-slider]');
 if(heroSlider){
   const slides=[...heroSlider.querySelectorAll('[data-slide-image]')];
@@ -30,7 +31,11 @@ menu?.addEventListener('click', () => {
   menu.setAttribute('aria-expanded', String(open));
   menu.setAttribute('aria-label', open ? 'Menüyü kapat' : 'Menüyü aç');
   nav.classList.toggle('is-open', open);
+  navOverlay?.classList.toggle('is-open', open);
+  document.body.classList.toggle('nav-open', open);
 });
+document.querySelector('.main-nav-close')?.addEventListener('click', () => {if(menu?.getAttribute('aria-expanded')==='true')menu.click();});
+navOverlay?.addEventListener('click', () => {if(menu?.getAttribute('aria-expanded')==='true')menu.click();});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && menu?.getAttribute('aria-expanded') === 'true') { menu.click(); menu.focus(); }
 });
@@ -46,7 +51,12 @@ document.querySelectorAll('.view-button').forEach(button => button.addEventListe
   document.querySelector('#archive-results').classList.toggle('grid-view',button.dataset.view==='grid');
 }));
 document.querySelector('.back-top')?.addEventListener('click', () => window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
-const updateScroll = () => document.querySelector('.back-top')?.classList.toggle('visible',window.scrollY>600);
+const homeContactBar=document.querySelector('.juris-home .mobile-contact-bar');
+if(homeContactBar)document.body.classList.add('contact-bar-ready');
+const updateScroll = () => {
+  document.querySelector('.back-top')?.classList.toggle('visible',window.scrollY>600);
+  if(homeContactBar)homeContactBar.classList.toggle('is-visible',window.scrollY>=Math.max(200,(heroSlider?.offsetHeight||0)-80));
+};
 window.addEventListener('scroll',updateScroll,{passive:true});updateScroll();
 document.querySelector('.print-button')?.addEventListener('click', () => window.print());
 document.querySelector('.copy-link')?.addEventListener('click', async () => {
@@ -97,3 +107,36 @@ document.querySelectorAll('.submenu-toggle').forEach(toggle=>toggle.addEventList
 document.addEventListener('click',e=>{if(!e.target.closest('.nav-item'))closeSubmenus();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const open=document.querySelector('.submenu-toggle[aria-expanded=true]');if(open){closeSubmenus();open.focus();}}});
 document.querySelectorAll('.nav-item').forEach(item=>item.addEventListener('focusout',e=>{if(!item.contains(e.relatedTarget)){const toggle=item.querySelector('.submenu-toggle');if(toggle){toggle.setAttribute('aria-expanded','false');document.getElementById(toggle.getAttribute('aria-controls')).hidden=true;}}}));
+
+// Kanunlar fihristi: canlı arama filtresi
+(()=>{
+  const root=document.querySelector('.law-index');
+  if(!root)return;
+  const search=root.querySelector('.law-index-search');
+  const clearBtn=root.querySelector('.law-index-search-clear');
+  const emptyBtn=root.querySelector('.law-index-empty-button');
+  const cards=[...root.querySelectorAll('.law-card')];
+  const grid=root.querySelector('.law-index-grid');
+  const empty=root.querySelector('.law-index-empty');
+  const status=root.querySelector('.law-index-status');
+  const fold=v=>String(v||'').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i');
+  const update=()=>{
+    const query=fold(search.value.trim());
+    let visible=0;
+    cards.forEach(card=>{
+      const match=!query||fold(card.dataset.search).indexOf(query)!==-1;
+      card.hidden=!match;
+      if(match)visible++;
+    });
+    const hasQuery=search.value.trim().length>0;
+    empty.hidden=visible!==0;
+    grid.hidden=visible===0;
+    clearBtn.hidden=!hasQuery;
+    status.innerHTML='<span><strong>'+visible+'</strong> kanun gösteriliyor</span>';
+  };
+  const reset=()=>{search.value='';update();search.focus();};
+  search.addEventListener('input',update);
+  clearBtn.addEventListener('click',reset);
+  emptyBtn?.addEventListener('click',reset);
+  update();
+})();

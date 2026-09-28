@@ -37,20 +37,58 @@ function theme_css(): string {
         [$min,$max,$default]=THEME_NUMBERS[$key];$v=max($min,min($max,(int)setting($key,(string)$default)));
         $css.='--'.$variable.':'.($key==='hero_overlay_opacity'?$v/100:$v.'px').';';
     }
-    $font=match(setting('heading_font','arial')){
+    $font=match(setting('heading_font','serif')){
         'sans'=>'Manrope,Arial,sans-serif',
         'serif'=>'"Cormorant Garamond",Georgia,serif',
         default=>'Arial,Helvetica,sans-serif',
     };
-    $css.='--sans:'.$font.';--serif:'.$font.';--heading:'.$font.';';
+    $body=setting('heading_font','serif')==='arial'?'Arial,Helvetica,sans-serif':'Manrope,Arial,sans-serif';
+    $css.='--sans:'.$body.';--serif:"Cormorant Garamond",Georgia,serif;--heading:'.$font.';';
     return ':root{'.$css.'--navy-deep:color-mix(in srgb,var(--navy) 85%,#000);--paper:var(--background);--ink-soft:var(--muted);--line-soft:var(--line)}';
 }
 function home_sections(): array {
     $order=array_filter(array_map('trim',explode(',',setting('home_section_order',implode(',',array_keys(HOME_SECTIONS))))));
-    // Older installations kept these sections outside the sortable list.
-    if(!in_array('home_consultation',$order,true))array_unshift($order,'home_consultation');
-    if(!in_array('home_profile',$order,true))array_unshift($order,'home_profile');
     return array_values(array_unique(array_merge(array_intersect($order,array_keys(HOME_SECTIONS)),array_keys(HOME_SECTIONS))));
+}
+function migrate_classic_design(PDO $db): void {
+    $q=$db->prepare('SELECT value FROM settings WHERE key=?');$q->execute(['private_classic_design_version']);
+    $version=(int)$q->fetchColumn();if($version>=3)return;
+    $db->beginTransaction();
+    try {
+        $order='home_profile,intro,office,practices,home_consultation,principles,articles,faq,approach,home_map,contact';
+        $replace=$db->prepare('UPDATE settings SET value=? WHERE key=? AND value=?');
+        foreach([
+            'principles,intro,approach,office,practices,articles,faq,contact',
+            implode(',',array_keys(HOME_SECTIONS)),
+            'intro,home_profile,practices,home_consultation,principles,articles,faq,approach,home_map,contact,office',
+            'intro,home_profile,office,practices,home_consultation,principles,articles,faq,approach,home_map,contact',
+        ] as $previous)$replace->execute([$order,'home_section_order',$previous]);
+        if($version<1){
+            $replace->execute(['serif','heading_font','arial']);
+            $replace->execute(['serif','heading_font','sans']);
+            $replace->execute(['0','show_topbar','1']);
+        }
+        if($version<3){
+            foreach([
+                'hero_eyebrow'=>[['YURTDAŞ HUKUK BÜROSU','YURTDAŞ HUKUK & DANIŞMANLIK'],'YURTDAŞ HUKUK'],
+                'hero_title'=>[["Sorununuzu dinleriz,\nyol haritasını birlikte çıkarırız.","Hukukun rehberliğinde,\ngüvenle ileriye."],"Avukatlık & Hukuk\nHizmetleri"],
+                'hero_text'=>[['Bir hukuki meseleyle karşılaştığınızda genelde ilk soru "şimdi ne olacak?" oluyor. Dosyanızı ilk günden itibaren bizzat ben takip eder, süreci size adım adım anlatırım.','Her hukuki mesele, kendine özgü bir yaklaşımı hak eder. Haklarınızı anlamak, sürecinizi planlamak ve geleceğinizi güvenle şekillendirmek için yanınızdayız.'],'Yurtdaş Hukuk, Hatay merkezli olarak bireylere ve kurumlara avukatlık ve hukuki danışmanlık hizmeti sunar.'],
+                'hero_button'=>[['Ofisimizi tanıyın','Büromuzu tanıyın'],'Bilgi Edinin'],
+                'hero_button_url'=>[['/kurumsal'],'/iletisim'],
+                'home_profile_eyebrow'=>[['KURUCU AVUKAT','AVUKATIMIZ'],'YURTDAŞ HUKUK'],
+                'home_profile_title'=>[['Dosyanızı ben, bizzat ben takip ederim.','Hukuki sürecinizde doğrudan iletişim.'],'Yurtdaş Hukuk'],
+                'intro_title'=>[["Dosyanız kaç kişiden geçmiyor;\ntek bir avukattan geçiyor.","Her adımda açık iletişim.\nHer dosyada aynı özen."],'Hakkımızda'],
+                'intro_text'=>[["Büyük bürolarda dosyanız stajyerden kıdemli avukata, oradan ortağa kadar birkaç elden geçebilir. Burada öyle değil: görüştüğünüz kişi, dosyanızı mahkemeye taşıyan kişinin ta kendisi.\nBu da hem daha hızlı geri dönüş, hem de sürecin her aşamasında aynı kişiyle konuşma rahatlığı demek.","Hukuki süreçlerin yalnızca evrak ve usullerden ibaret olmadığını biliyoruz. Her dosyanın arkasında bir insan, bir emek ve bir gelecek var.\nBireysel ve kurumsal ihtiyaçları dikkatle dinliyor; hukuki seçenekleri anlaşılır bir dille değerlendirerek süreci birlikte planlıyoruz."],'Yurtdaş Hukuk, bireylerin ve kurumların hukuki ihtiyaçlarını dikkatle dinleyerek her meseleyi kendi koşulları içinde değerlendirir. Av. Halil İbrahim Yurtdaş ile doğrudan iletişim kurabilir, sürecin aşamalarına ilişkin açık bilgi alabilirsiniz.'],
+                'intro_image'=>[['/assets/images/architecture.jpg'],'/assets/images/about-overhead.webp'],
+                'intro_image_alt'=>[['Hukuk bürosu tanıtımı'],'Büro bekleme alanında dosya inceleyen kişi'],
+                'office_eyebrow'=>[['RANDEVU','BÜROMUZ'],'HATAY · ANTAKYA'],
+                'office_title'=>[["Durumunuzu anlatın,\nsize ne kadar sürede dönebileceğimizi söyleyeyim.","Hukuki sürecinizi\nbirlikte değerlendirelim."],"Antakya'daki hukuk büromuz"],
+                'office_text'=>[['Telefon veya iletişim formundan yazın; genellikle aynı gün içinde geri dönüş yaparım. İlk görüşmede dosyanızı dinler, gerçekçi bir değerlendirme sunarım.','Bireysel ve kurumsal hukuki ihtiyaçlarınız için görüşme talebinizi iletebilir, çalışma alanlarımız ve görüşme sürecimiz hakkında bilgi alabilirsiniz.'],'Yurtdaş Hukuk, Hatay Antakya’daki bürosunda bireysel ve kurumsal hukuki ihtiyaçlar için avukatlık ve danışmanlık hizmeti sunar.'],
+            ] as $key=>[$oldValues,$newValue])foreach($oldValues as $oldValue)$replace->execute([$newValue,$key,$oldValue]);
+        }
+        $db->prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value')->execute(['private_classic_design_version','3']);
+        $db->commit();
+    }catch(Throwable $e){$db->rollBack();throw $e;}
 }
 function migrate_cinar_theme(PDO $db): void {
     $q=$db->prepare('SELECT value FROM settings WHERE key=?');$q->execute(['private_cinar_theme_version']);$version=(int)$q->fetchColumn();if($version>=2)return;
