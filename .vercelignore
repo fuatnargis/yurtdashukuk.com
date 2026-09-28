@@ -10,10 +10,9 @@ node_modules
 .github
 assets/uploads
 assets/images/**/*.png
-images
-css
-js
-include
+/css
+/js
+/include
 *.md
 *.ps1
 *.zip
