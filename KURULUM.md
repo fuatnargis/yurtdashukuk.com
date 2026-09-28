@@ -1,13 +1,23 @@
-# Mizan Hukuk — web sitesi ve yönetim paneli
+# Yurtdaş Hukuk — web sitesi ve yönetim paneli
 
-Kadim Hukuk referansındaki geniş görselli giriş, kurumsal sunum ve hukuki yayın yapısı; sağladığınız Lawyers HTML şablonunun serif tipografisi ve sayfa düzeniyle yeniden yorumlandı. Metinler, logo işareti ve görseller bu proje için hazırlandı. Referans büronun içerikleri, kişileri ve iletişim bilgileri kullanılmadı.
+Ana sayfa, satın alınan Juris `homepage-5.html` şablonunun bölüm düzenine uyarlanmıştır. Kurumsal lacivert palet, Arial yazı tipi ve mevcut içerikler kullanılır; tema renkleri, yazı tipi, menü düzeni ve ana sayfa bölüm sırası panelden yönetilir. Ayrıntılar için [Tema ve içerik yönetimi](TEMA-YONETIMI.md) belgesini okuyun.
+
+Güncel geliştirmeler, test sınırları ve tamamlanacak gerçek bilgiler: [Teslim notları](TESLIM-NOTLARI.md).
 
 ## Yerel olarak açma
+
+Mac'e USB ile taşıma ve başlatma adımları: [Mac'e taşıma](MAC-ILE-TASIMA.md).
 
 PowerShell'de proje klasöründen:
 
 ```powershell
 .\baslat.ps1
+```
+
+PowerShell betik çalıştırmayı engelliyorsa sistem politikasını değiştirmeden:
+
+```powershell
+php -d extension=php_pdo_sqlite.dll -d extension=php_gd.dll -S 127.0.0.1:8088 router.php
 ```
 
 - Site: **http://127.0.0.1:8088/**
@@ -17,7 +27,7 @@ PowerShell'de proje klasöründen:
 - Durdurmak için sunucunun çalıştığı terminalde `Ctrl+C`.
 - Başka port: `.\baslat.ps1 -Port 8090`.
 
-Mevcut teslimde yerel sunucu arka planda 8088 portunda çalıştırılmıştır. Aynı portta ikinci sunucu başlatmayın. Çalışan sunucuyu doğrulamak için `Get-NetTCPConnection -LocalPort 8088 -State Listen` kullanabilirsiniz. Sunucu işleminin kimliği `storage/server.pid` dosyasına kaydedilmiştir; işlem kimlikleri daha sonra başka programlara atanabileceğinden durdurmadan önce komut satırını kontrol edin.
+Mevcut teslimde yerel sunucu arka planda 8088 portunda çalıştırılmıştır. Aynı portta ikinci sunucu başlatmayın. Çalışan sunucuyu doğrulamak için `Get-NetTCPConnection -LocalPort 8088 -State Listen` kullanabilirsiniz. Sunucuyu durdurmadan önce portu dinleyen işlemin komut satırını kontrol edin; işlem kimlikleri yeniden kullanılabilir.
 
 ### Gereksinimler
 
@@ -61,7 +71,7 @@ Eski şablon sayfaları sunucu üzerinden ilgili yeni sayfalara 301 ile yönlend
 - **İçerik geçmişi:** her değişiklik öncesi kayıt; önceki sürüme dönme.
 - **Çalışma alanları:** sayfa içeriği, simge, görsel ve sıra.
 - **Sayfalar:** kurumsal metin, ekip tanıtımı, KVKK, çerez, yasal bilgiler ve yeni özel sayfalar.
-- **Ekip:** gerçek avukatların unvanları, özgeçmişleri ve fotoğrafları. İlk kurulumda hayali kişi eklenmedi.
+- **Avukat Profilleri:** avukatın unvanı, özgeçmişi, fotoğrafı, mesleki bilgileri ve yazarlık bağlantıları.
 - **Sık sorulan sorular:** soru, yanıt, sıralama ve görünürlük.
 - **Menüler:** bağlantı, başlık, sıra ve yayın durumu; üst ve alt menü aynı içerikten üretilir.
 - **Medya:** JPG, PNG, WebP yükleme ve içerik düzenleyicisinden görsel seçme. En fazla 5 MB / 20 megapiksel; yüklemeler GD ile WebP olarak yeniden kodlanır.
@@ -82,13 +92,13 @@ Normal paragraf. **Kalın ifade**.
 [Bağlantı metni](https://ornek.com)
 ```
 
-HTML ve JavaScript çalıştırılmaz. Kayıtlı taslaklar yönetici önizlemesinde incelenebilir. Düzenleyici kaydedilmemiş değişikliklerde sayfadan ayrılmadan önce uyarır. Eşzamanlı düzenlemelerde eski kayıt yeni içeriğin üzerine yazılmaz.
+Düz metin biçiminde HTML metin olarak gösterilir. HTML biçimi seçilirse yalnızca izin verilen etiketler temizlenerek işlenir; JavaScript çalıştırılmaz. Kayıtlı taslaklar yönetici önizlemesinde incelenebilir. Düzenleyici kaydedilmemiş değişikliklerde sayfadan ayrılmadan önce uyarır. Eşzamanlı düzenlemelerde eski kayıt yeni içeriğin üzerine yazılmaz.
 
 ## Yayından önce tamamlanacak gerçek bilgiler
 
-**Mizan Hukuk** ve **İstanbul** geçici örnek bilgileridir. Büro adı, logo, açık adres, telefon, e-posta ve gerçek ekip bilgileri henüz kullanıcı tarafından verilmedi. Bu alanları panelden değiştirin. Örnek yazılar ve çalışma alanları da düzenlenebilir.
+Başlangıç verilerinde **Yurtdaş Hukuk**, Av. Halil İbrahim Yurtdaş, Antakya/Hatay adresi ve verilen telefon numarası bulunur. Profil fotoğrafı henüz yüklenmediğinden avukat kartında adının baş harfleri görünür. Fotoğrafı **Avukat Profilleri** bölümünden, e-posta ve diğer iletişim bilgilerini **Büro Kimliği** bölümünden tamamlayın. Örnek yazılar ve çalışma alanları da panelden düzenlenebilir.
 
-KVKK sayfası açıkça işaretlenmiş bir **taslaktır**. Gerçek veri sorumlusu kimliği, işleme amaçları/hukuki sebepler, aktarım bilgileri ve başvuru kanalları büronun uygulamasına göre tamamlanmalıdır. Çerez ve diğer yasal metinler de gerçek kurulumla birlikte gözden geçirilmelidir. Formun aydınlatma metni okundu onayı, pazarlama veya genel açık rıza olarak sunulmaz.
+KVKK sayfası açıkça işaretlenmiş bir **taslaktır**. Form, bu metin tamamlanıp **Site Ayarları → Form ve KVKK** ekranından doğrulanana kadar başvuru kabul etmez. Metin gövdesi değiştirildiğinde doğrulama yenilenmelidir. Gerçek veri sorumlusu kimliği, işleme amaçları/hukuki sebepler, aktarım bilgileri ve başvuru kanalları büronun uygulamasına göre tamamlanmalıdır. Çerez ve diğer yasal metinler de gerçek kurulumla birlikte gözden geçirilmelidir. Formun aydınlatma metni okundu onayı, pazarlama veya genel açık rıza olarak sunulmaz.
 
 Başlangıçta arama motoru dizinlemesi kapalıdır. Gerçek bilgiler tamamlandıktan sonra **Site Ayarları → Arama Motorları** bölümünden kök alan adını ve görünürlüğü ayarlayın.
 
@@ -144,6 +154,8 @@ Medya dizininde PHP yürütmeye izin vermeyin. Nginx'te `.htaccess` dosyaları u
 ```powershell
 node tests/integration.mjs
 ```
+
+Vercel'e güncelleme göndermeden önce `npm.cmd run deploy:check` komutunu çalıştırın. Bu komut gerekli dağıtım dosyalarını, PHP sözdizimini ve entegrasyon testlerini kontrol eder. PowerShell'de `npm` komutu çalıştırma ilkesi nedeniyle engellenirse `npm.cmd` kullanın.
 
 Node.js 22+ gerekir. Test kendi PHP sunucusunu ve ayrı geçici veritabanını başlatır. Gerçek site içeriklerini değiştirmez. Ürettiği geçici yükleme dosyasını temizler. Sonuç dosyası `tests/artifacts/integration-results.json` içine yazılır.
 

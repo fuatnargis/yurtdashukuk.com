@@ -12,9 +12,9 @@ function category_directory(array $articles): void {
 }
 function office_panel(): void {
     if(setting('show_office')!=='1')return;
-    ?><section class="office-section"><div class="container"><div class="office-panel">
-    <div class="office-panel-copy"><span class="eyebrow"><?=e(setting('office_eyebrow'))?> · <?=e(setting('city'))?></span><h2><?=nl2br(e(setting('office_title')))?></h2><p><?=e(setting('office_text'))?></p><a class="text-link" href="/ekibimiz">Ekibimizi tanıyın <?=icon('arrow-up')?></a></div>
-    <div class="office-panel-contact"><span class="office-symbol"><?=icon('building')?></span><h3>Ofis ve iletişim</h3><address><?=nl2br(e(setting('address')))?></address><p class="office-hours"><?=icon('clock')?><?=e(setting('office_hours'))?></p><div class="office-channels">
+    ?><section class="office-section" data-home-section="office"><div class="container"><div class="office-panel">
+    <div class="office-panel-copy"><span class="eyebrow"><?=e(setting('office_eyebrow'))?> · <?=e(setting('city'))?></span><h2><?=nl2br(e(setting('office_title')))?></h2><div class="office-text"><?=rich_text(setting('office_text'))?></div><a class="text-link" href="/kurumsal"><?=e(ui('office_about'))?> <?=icon('arrow-up')?></a></div>
+    <div class="office-panel-contact"><span class="office-symbol"><?=icon('building')?></span><h3><?=e(ui('office_info'))?></h3><address><?=nl2br(e(setting('address')))?></address><p class="office-hours"><?=icon('clock')?><?=e(setting('office_hours'))?></p><div class="office-channels">
     <?php if(setting('phone')):?><a href="tel:<?=e(preg_replace('/[^+0-9]/','',setting('phone')))?>"><?=icon('phone')?><?=e(setting('phone'))?></a><?php endif;?>
     <?php if(setting('email')):?><a href="mailto:<?=e(setting('email'))?>"><?=icon('mail')?><?=e(setting('email'))?></a><?php endif;?></div><a class="button button-outline" href="/iletisim">İletişime geçin <?=icon('arrow-up')?></a></div>
     </div></div></section><?php

@@ -1,0 +1,11 @@
+{
+  "name": "yurtdas-hukuk-site",
+  "private": true,
+  "engines": { "node": "22.x" },
+  "scripts": {
+    "test": "node tests/integration.mjs",
+    "deploy:check": "node tools/deploy-check.mjs",
+    "deploy:preview": "node tools/deploy-check.mjs && npx --yes vercel@59.23.2 deploy",
+    "deploy:production": "node tools/deploy-check.mjs && npx --yes vercel@59.23.2 deploy --prod"
+  }
+}

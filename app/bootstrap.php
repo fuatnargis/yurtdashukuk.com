@@ -2,22 +2,41 @@
 declare(strict_types=1);
 
 define('ROOT', dirname(__DIR__));
-define('DATA_DIR', getenv('HUKUK_DATA_DIR') ?: ROOT . '/storage');
+require_once __DIR__.'/runtime.php';
+define('DATA_DIR', getenv('HUKUK_DATA_DIR') ?: (vercel_runtime()?sys_get_temp_dir().'/hukuk':ROOT.'/storage'));
+require_once __DIR__.'/media-storage.php';
 require_once __DIR__.'/site-texts.php';
+require_once __DIR__.'/theme.php';
+require_once __DIR__.'/profile.php';
 require_once __DIR__.'/seo.php';
 require_once __DIR__.'/article-components.php';
+require_once __DIR__.'/content-format.php';
 date_default_timezone_set('Europe/Istanbul');
 if (!is_dir(DATA_DIR)) { mkdir(DATA_DIR, 0700, true); }
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
-ini_set('error_log', DATA_DIR . '/php-error.log');
+ini_set('error_log', vercel_runtime()?'php://stderr':DATA_DIR.'/php-error.log');
+set_exception_handler(function(Throwable $error): void {
+    error_log('Application failure: '.get_class($error).' code '.$error->getCode());
+    if(PHP_SAPI==='cli'){fwrite(STDERR,"İşlem tamamlanamadı. Bağlantı ve kurulum ayarlarını kontrol edin.\n");exit(1);}
+    http_response_code(503);header('Content-Type: text/plain; charset=utf-8');header('Cache-Control: no-store');echo 'Site geçici olarak kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
+});
+if(vercel_runtime()&&!cloud_database())throw new RuntimeException('Persistent database required');
+if(vercel_runtime()){$_SERVER['HTTPS']='on';if(isset($_SERVER['HTTP_X_VERCEL_FORWARDED_FOR'])){$_SERVER['REMOTE_ADDR']=trim(explode(',',$_SERVER['HTTP_X_VERCEL_FORWARDED_FOR'])[0]);}}
 if (PHP_SAPI !== 'cli') {
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: strict-origin-when-cross-origin');
     header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
-    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; object-src 'none'");
+    header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'self'; frame-src https://maps.google.com https://www.google.com; frame-ancestors 'self'; form-action 'self'; base-uri 'self'; object-src 'none'");
     if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') { header('Strict-Transport-Security: max-age=31536000'); }
+    header('Cache-Control: private, no-store');
+    $mediaPath=(string)parse_url($_SERVER['REQUEST_URI']??'/',PHP_URL_PATH);
+    if(cloud_database()&&preg_match('~^/assets/uploads/[a-f0-9]{32}\.(webp|png|jpg|jpeg)$~',$mediaPath)){
+        if(!in_array($_SERVER['REQUEST_METHOD']??'GET',['GET','HEAD'],true)){http_response_code(405);header('Allow: GET, HEAD');exit;}
+        serve_cloud_media($mediaPath);
+    }
+    if(cloud_database()){require_once __DIR__.'/database-session.php';session_set_save_handler(new DatabaseSession(),true);}
     session_name('hukuk_session');
     session_set_cookie_params(['httponly'=>true, 'secure'=>!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off', 'samesite'=>'Lax', 'path'=>'/']);
     ini_set('session.use_strict_mode', '1');
@@ -27,37 +46,47 @@ if (PHP_SAPI !== 'cli') {
 function db(): PDO {
     static $db;
     if ($db) return $db;
-    if (!extension_loaded('pdo_sqlite')) {
-        http_response_code(503);
-        exit('Sunucuda PHP PDO SQLite eklentisi etkinleştirilmelidir. Yerel kurulum için baslat.ps1 dosyasını kullanın.');
+    $db=database_connection();
+    if(cloud_database()&&getenv('HUKUK_SETUP')!=='1'){
+        migrate_entry_presentation($db);
+        migrate_natural_hero($db);
+        migrate_owner_profile($db);
+        migrate_remove_press($db);
+        return $db;
     }
-    $db = new PDO('sqlite:' . DATA_DIR . '/site.sqlite', null, null, [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
-    $db->exec('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;');
-    $db->exec("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, email TEXT UNIQUE NOT NULL, name TEXT NOT NULL, password TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1);
-        CREATE TABLE IF NOT EXISTS entries (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, title TEXT NOT NULL, slug TEXT NOT NULL, excerpt TEXT NOT NULL DEFAULT '', body TEXT NOT NULL DEFAULT '', image TEXT NOT NULL DEFAULT '', category TEXT NOT NULL DEFAULT '', author TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'draft', published_at TEXT NOT NULL, sort_order INTEGER NOT NULL DEFAULT 0, meta_title TEXT NOT NULL DEFAULT '', meta_description TEXT NOT NULL DEFAULT '', link TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, UNIQUE(type, slug));
-        CREATE INDEX IF NOT EXISTS entries_listing ON entries(type, status, sort_order);
-        CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', created_at TEXT NOT NULL, notice_version TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, bucket TEXT NOT NULL, created_at INTEGER NOT NULL);
-        CREATE INDEX IF NOT EXISTS attempts_bucket ON attempts(bucket, created_at);
-        CREATE TABLE IF NOT EXISTS revisions (id INTEGER PRIMARY KEY AUTOINCREMENT, entry_id INTEGER NOT NULL, snapshot TEXT NOT NULL, created_at TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS audit (id INTEGER PRIMARY KEY AUTOINCREMENT, actor TEXT NOT NULL, action TEXT NOT NULL, created_at TEXT NOT NULL);
-        CREATE TABLE IF NOT EXISTS media (id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT NOT NULL UNIQUE, name TEXT NOT NULL, created_at TEXT NOT NULL);");
+    initialize_database($db);
+    migrate_entry_presentation($db);
     if (!(int)$db->query('SELECT COUNT(*) FROM settings')->fetchColumn()) {
         require __DIR__ . '/seed.php';
         seed($db);
     }
     require_once __DIR__.'/migrations.php';
     migrate_reference_design($db);
+    migrate_minimal_redesign($db);
+    migrate_cinar_theme($db);
+    migrate_editorial_theme($db);
+    migrate_juris_home($db);
+    migrate_navy_palette($db);
+    migrate_arial_font($db);
+    migrate_natural_hero($db);
+    migrate_owner_profile($db);
+    migrate_remove_press($db);
     return $db;
 }
 function e(mixed $value): string { return htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+function &settings_cache(): array {
+    static $values=null;
+    if($values===null)$values=db()->query('SELECT key,value FROM settings')->fetchAll(PDO::FETCH_KEY_PAIR);
+    return $values;
+}
 function setting(string $key, string $fallback=''): string {
-    $stmt = db()->prepare('SELECT value FROM settings WHERE key=?'); $stmt->execute([$key]);
-    $v=$stmt->fetchColumn(); return $v === false ? $fallback : (string)$v;
+    if($key==='site_url'&&getenv('HUKUK_SITE_URL'))return rtrim((string)getenv('HUKUK_SITE_URL'),'/');
+    if($key==='indexing'&&vercel_runtime()&&getenv('VERCEL_ENV')!=='production')return '0';
+    $values=settings_cache();return array_key_exists($key,$values)?(string)$values[$key]:$fallback;
 }
 function save_setting(string $key, string $value): void {
     db()->prepare('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value')->execute([$key,$value]);
+    $values=&settings_cache();$values[$key]=$value;
 }
 function scalar_input(array $source, string $key, string $default=''): string { return isset($source[$key]) && is_scalar($source[$key]) ? trim((string)$source[$key]) : $default; }
 function input(string $key, string $default=''): string { return scalar_input($_POST,$key,$default); }
@@ -77,16 +106,23 @@ function slugify(string $title): string {
 }
 function entries(string $type, bool $public=true): array {
     $sql='SELECT * FROM entries WHERE type=?';
-    if ($public) $sql.=" AND status='published' AND published_at<=datetime('now','localtime')";
+    if ($public) $sql.=" AND status='published' AND published_at<=?";
     $sql.=$type==='article' ? ' ORDER BY published_at DESC, id DESC' : ' ORDER BY sort_order ASC, id ASC';
-    $q=db()->prepare($sql);$q->execute([$type]);return $q->fetchAll();
+    $q=db()->prepare($sql);$q->execute($public?[$type,date('Y-m-d H:i:s')]:[$type]);return $q->fetchAll();
 }
 function entry(string $type,string $slug, bool $public=true): ?array {
-    $q=db()->prepare('SELECT * FROM entries WHERE type=? AND slug=?'.($public?" AND status='published' AND published_at<=datetime('now','localtime')":''));
-    $q->execute([$type,$slug]); return $q->fetch() ?: null;
+    $q=db()->prepare('SELECT * FROM entries WHERE type=? AND slug=?'.($public?" AND status='published' AND published_at<=?":''));
+    $q->execute($public?[$type,$slug,date('Y-m-d H:i:s')]:[$type,$slug]); return $q->fetch() ?: null;
 }
 function entry_url(array $entry): string {
-    return match($entry['type']) {'article'=>'/makaleler/'.$entry['slug'], 'practice'=>'/calisma-alanlari/'.$entry['slug'], 'team'=>'/ekibimiz/'.$entry['slug'], 'page'=>in_array($entry['slug'],['kurumsal','ekibimiz'],true)?'/'.$entry['slug']:'/sayfa/'.$entry['slug'], default=>safe_url($entry['link']??'/')};
+    return match($entry['type']) {'article'=>'/makaleler/'.$entry['slug'], 'practice'=>'/calisma-alanlari/'.$entry['slug'], 'team'=>'/avukatlar/'.$entry['slug'], 'page'=>$entry['slug']==='kurumsal'?'/kurumsal':'/sayfa/'.$entry['slug'], default=>safe_url($entry['link']??'/')};
+}
+function sync_entry_identity(array $before,array $after): void {
+    if($before['slug']!==$after['slug']&&in_array($before['type'],['article','practice','page','team'],true)){
+        db()->prepare('INSERT INTO entry_redirects(type,slug,entry_id) VALUES(?,?,?) ON CONFLICT(type,slug) DO UPDATE SET entry_id=excluded.entry_id')->execute([$before['type'],$before['slug'],$before['id']]);
+        db()->prepare("UPDATE entries SET link=? WHERE type='menu' AND link=?")->execute([entry_url($after+['type'=>$before['type']]),entry_url($before)]);
+    }
+    if($before['type']==='team'&&$before['title']!==$after['title'])db()->prepare("UPDATE entries SET author=? WHERE type='article' AND author=?")->execute([$after['title'],$before['title']]);
 }
 function safe_url(string $url): string {
     if (preg_match('~^/(?!/)[^\\\\\x00-\x20]*$~', $url)) return $url;
@@ -138,6 +174,7 @@ function icon(string $name, string $class=''): string {
         'scale'=>'<path d="M12 3v17M8 21h8M4 7h16M4 7 1 14h6L4 7Zm16 0-3 7h6l-3-7Z"/><circle cx="12" cy="5" r="2"/>',
         'search'=>'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
         'phone'=>'<path d="m7 3 3 5-3 3a15 15 0 0 0 6 6l3-3 5 3c0 4-3 5-6 4C8 19 5 16 3 9 2 6 3 3 7 3Z"/>',
+        'whatsapp'=>'<path d="M20.5 11.5a8.5 8.5 0 0 1-12.4 7.5L3 20.5l1.5-5.1A8.5 8.5 0 1 1 20.5 11.5Z"/><path d="m8.1 7.8 1.7 2-1 1.1c.8 1.4 2 2.6 3.4 3.4l1.1-1 2 1.7-.8 1.3c-3.6.8-8.1-3.7-7.3-7.3l.9-1.2Z"/>',
         'pin'=>'<path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 0 1 14 0Z"/><circle cx="12" cy="10" r="2"/>',
         'mail'=>'<rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 6 9 7 9-7"/>',
         'clock'=>'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
